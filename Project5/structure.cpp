@@ -6,6 +6,10 @@
 //  Copyright © 2016 Frank Palmisano. All rights reserved.
 //
 
+extern "C" {
+#include "compiler.h"
+}
+
 #include <iostream>
 
 int main(int argc, const char * argv[]) {

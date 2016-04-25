@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4CD10FD81CCE99A0008545FD /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4CD10FD71CCE99A0008545FD /* main.cpp */; };
+		4CD10FD81CCE99A0008545FD /* structure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4CD10FD71CCE99A0008545FD /* structure.cpp */; };
+		4CD10FDF1CCE9A61008545FD /* compiler.c in Sources */ = {isa = PBXBuildFile; fileRef = 4CD10FDE1CCE9A61008545FD /* compiler.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +25,9 @@
 
 /* Begin PBXFileReference section */
 		4CD10FD41CCE99A0008545FD /* Project5 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Project5; sourceTree = BUILT_PRODUCTS_DIR; };
-		4CD10FD71CCE99A0008545FD /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		4CD10FD71CCE99A0008545FD /* structure.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = structure.cpp; sourceTree = "<group>"; };
+		4CD10FDE1CCE9A61008545FD /* compiler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = compiler.c; sourceTree = "<group>"; };
+		4CD10FE01CCE9A72008545FD /* compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +60,9 @@
 		4CD10FD61CCE99A0008545FD /* Project5 */ = {
 			isa = PBXGroup;
 			children = (
-				4CD10FD71CCE99A0008545FD /* main.cpp */,
+				4CD10FD71CCE99A0008545FD /* structure.cpp */,
+				4CD10FDE1CCE9A61008545FD /* compiler.c */,
+				4CD10FE01CCE9A72008545FD /* compiler.h */,
 			);
 			path = Project5;
 			sourceTree = "<group>";
@@ -118,7 +123,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CD10FD81CCE99A0008545FD /* main.cpp in Sources */,
+				4CD10FDF1CCE9A61008545FD /* compiler.c in Sources */,
+				4CD10FD81CCE99A0008545FD /* structure.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
