@@ -245,6 +245,7 @@
 				4CD10FDD1CCE99A0008545FD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

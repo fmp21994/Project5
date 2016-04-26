@@ -23,9 +23,12 @@ struct StatementNode* parse_generate_intermediate_representation();
 struct StatementNode* parse_body();
 struct StatementNode* parse_stmt_list();
 struct StatementNode* parse_stmt();
-
+struct StatementNode* parse_case_list();
+struct StatementNode* parse_case();
+struct StatementNode* parse_switch_body();
 
 string Token = "";
+string varID = "";
 map<string, ValueNode*> variableMap;
 
 struct StatementNode* parse_generate_intermediate_representation()
@@ -461,7 +464,149 @@ struct StatementNode* parse_stmt()
     }
     else if (ttype == SWITCH)
     {
+        GetToken();
+        if (ttype == ID)
+        {
+            varID = Token;
+            st = parse_switch_body();
+            return st;
+        }
+        else
+        {
+            debug("Expecting initial ID while parsing Switch statement.");
+            exit(1);
+        }
+    }
+    return NULL;
+};
+
+struct StatementNode* parse_case()
+{
+    struct StatementNode* st = new StatementNode;
+    
+    if (ttype == CASE)
+    {
+        st->type = IF_STMT;
+        struct IfStatement* if_node = new IfStatement;
+        st->if_stmt = if_node;
+        GetToken();
+        if (ttype == NUM)
+        {
+            if_node->condition_operand1 = variableMap[varID];
+            if_node->condition_op = NOTEQUAL;
+            if_node->condition_operand2 = new ValueNode;
+            if_node->condition_operand2->value = atoi(token);
+            GetToken();
+            if (ttype == COLON)
+            {
+                if_node->false_branch = parse_body();
+                struct StatementNode* it = if_node->false_branch;
+                while (it->next != NULL)
+                {
+                    it = it->next;
+                }
+                struct StatementNode* no_node = new StatementNode;
+                no_node->type = NOOP_STMT;
+                no_node->next = NULL;
+                it->next = no_node;
+                if_node->true_branch = no_node;
+                st->next = no_node;
+                return st;
+            }
+        }
+        else
+        {
+            debug("Expecting COLON while parsing case.");
+            exit(1);
+        }
+    }
+    else if (ttype == DEFAULT)
+    {
+        st->type = GOTO_STMT;
+        struct GotoStatement* gt = new GotoStatement;
+        st->goto_stmt = gt;
+        GetToken();
+        if (ttype == COLON)
+        {
+            gt->target = parse_body();
+            struct StatementNode* it = gt->target;
+            while (it->next != NULL)
+            {
+                it = it->next;
+            }
+            struct StatementNode* no_node = new StatementNode;
+            no_node->type = NOOP_STMT;
+            no_node->next = NULL;
+            it->next = no_node;
+            st->next = no_node;
+            return st;
+        }
+        else
+        {
+            debug("Expecting COLON while parsing case DEFAULT.");
+            exit(1);
+        }
+    }
+    else
+    {
+        debug("Expecting CASE or DEFAULT while parsing case.");
+        exit(1);
+    }
+    return NULL;
+};
+
+struct StatementNode* parse_case_list()
+{
+    struct StatementNode* st;
+    struct StatementNode* stl;
+    
+    st = parse_case();
+    GetToken();
+    if (ttype == CASE || ttype == DEFAULT)
+    {
+        stl = parse_case_list();
         
+        if (st->type == IF_STMT)
+        {
+            st->next->next = stl;
+        }
+        else
+        {
+            st->next = stl;
+        }
+        return st;
+    }
+    else
+    {
+        ungetToken();
+        return st;
+    }
+};
+
+struct StatementNode* parse_switch_body()
+{
+    struct StatementNode* stl;
+    
+    GetToken();
+    if (ttype == LBRACE)
+    {
+        GetToken();
+        stl = parse_case_list();
+        GetToken();
+        if (ttype == RBRACE)
+        {
+            return stl;
+        }
+        else
+        {
+            debug("Expecting RBRACE while parsing switch body.");
+            exit(1);
+        }
+    }
+    else
+    {
+        debug("Expecting LBRACE while parsing switch body.");
+        exit(1);
     }
     return NULL;
 };
