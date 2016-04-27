@@ -12,13 +12,12 @@ extern "C" {
 
 #include <map>
 #include <string>
-
 #include <stdlib.h>
 #include <stdio.h>
 
 using namespace std;
 
-int GetToken();
+int GetTokenString();
 struct StatementNode* parse_generate_intermediate_representation();
 struct StatementNode* parse_body();
 struct StatementNode* parse_stmt_list();
@@ -27,26 +26,22 @@ struct StatementNode* parse_case_list();
 struct StatementNode* parse_case();
 struct StatementNode* parse_switch_body();
 
-string Token = "";
+string Token;
 string varID = "";
+
+
 map<string, ValueNode*> variableMap;
 
 struct StatementNode* parse_generate_intermediate_representation()
 {
     struct StatementNode* program;
-//    program = new StatementNode;
-//    program->type = NOOP_STMT;
-//    struct StatementNode* st = new StatementNode;
-//    program->next = st;
-//    st->next = NULL;
-//    struct StatementNode* temp = st;
     
-    GetToken();
+    GetTokenString();
     while (ttype != SEMICOLON || ttype == COMMA)
     {
         if (ttype == COMMA)
         {
-            GetToken();
+            GetTokenString();
         }
         if (ttype == ID)
         {
@@ -55,15 +50,7 @@ struct StatementNode* parse_generate_intermediate_representation()
             sprintf(ptr,"%.4s", Token.c_str());
             variableMap[Token]->name = ptr;
             variableMap[Token]->value = 0;
-//            temp = new StatementNode;
-//            temp->next = new StatementNode;
-//            temp->type = ASSIGN_STMT;
-//            temp->assign_stmt = new AssignmentStatement;
-//            temp->assign_stmt->left_hand_side->name = ptr;
-//            temp->assign_stmt->op = 0;
-//            temp->assign_stmt->operand1 = 0;
-//            temp = temp->next;
-            GetToken();
+            GetTokenString();
         }
     }
     program = parse_body();
@@ -73,408 +60,425 @@ struct StatementNode* parse_generate_intermediate_representation()
 struct StatementNode* parse_stmt()
 {
     struct StatementNode* st = new StatementNode;
-    int type = ttype;
-    string tokenTemp = token;
-    if (ttype == ID)
+    st->next = NULL;
+    switch (ttype)
     {
-        st->type = ASSIGN_STMT;
-        struct AssignmentStatement* assignment_node = new AssignmentStatement;
-        st->assign_stmt = assignment_node;
-        
-        assignment_node->left_hand_side = variableMap[Token];
-        GetToken();
-        if (ttype == EQUAL)
+        case ID:
         {
-            GetToken();
-            if (ttype == ID)
+            st->type = ASSIGN_STMT;
+            struct AssignmentStatement* assignment_node = new AssignmentStatement;
+            st->assign_stmt = assignment_node;
+            
+            assignment_node->left_hand_side = variableMap[Token];
+            GetTokenString();
+            if (ttype == EQUAL)
             {
-                assignment_node->operand1 = variableMap[Token];
-                GetToken();
-                if (ttype == PLUS || ttype == MINUS || ttype == MULT || ttype == DIV)
+                GetTokenString();
+                if (ttype == ID)
                 {
-                    assignment_node->op = ttype;
-                    GetToken();
-                    if (ttype == ID)
+                    assignment_node->operand1 = variableMap[Token];
+                    GetTokenString();
+                    if (ttype == PLUS || ttype == MINUS || ttype == MULT || ttype == DIV)
                     {
-                        assignment_node->operand2 = variableMap[Token];
-                        GetToken();
-                        if (ttype == SEMICOLON)
+                        assignment_node->op = ttype;
+                        GetTokenString();
+                        if (ttype == ID)
                         {
-                            return st;
+                            assignment_node->operand2 = variableMap[Token];
+                            GetTokenString();
+                            if (ttype == SEMICOLON)
+                            {
+                                return st;
+                            }
+                            else
+                            {
+                                debug("Expecting SEMICOLON while parsing assignment statement.");
+                                exit(1);
+                            }
+                        }
+                        else if (ttype == NUM)
+                        {
+                            assignment_node->operand2 = new ValueNode;
+                            assignment_node->operand2->value = atoi(token);
+                            GetTokenString();
+                            if (ttype == SEMICOLON)
+                            {
+                                return st;
+                            }
+                            else
+                            {
+                                debug("Expecting SEMICOLON while parsing assignment statement.");
+                                exit(1);
+                            }
                         }
                         else
                         {
-                            debug("Expecting SEMICOLON while parsing assignment statement.");
+                            debug("Expecting ID or NUM while parsing operand 2 of assignment statement.");
                             exit(1);
                         }
                     }
-                    else if (ttype == NUM)
+                    else if (ttype == SEMICOLON)
                     {
-                        assignment_node->operand2 = new ValueNode;
-                        assignment_node->operand2->value = atoi(token);
-                        GetToken();
-                        if (ttype == SEMICOLON)
-                        {
-                            return st;
-                        }
-                        else
-                        {
-                            debug("Expecting SEMICOLON while parsing assignment statement.");
-                            exit(1);
-                        }
+                        assignment_node->op = 0;
+                        return st;
                     }
                     else
                     {
-                        debug("Expecting ID or NUM while parsing operand 2 of assignment statement.");
+                        debug("Expecting operand type after parsing operand1 of assignment statement.");
                         exit(1);
                     }
                 }
-                else if (ttype == SEMICOLON)
+                else if (ttype == NUM)
                 {
-                    assignment_node->op = 0;
-                    return st;
+                    assignment_node->operand1 = new ValueNode;
+                    assignment_node->operand1->value = atoi(token);
+                    GetTokenString();
+                    if (ttype == PLUS || ttype == MINUS || ttype == MULT || ttype == DIV)
+                    {
+                        assignment_node->op = ttype;
+                        GetTokenString();
+                        if (ttype == ID)
+                        {
+                            assignment_node->operand2 = variableMap[Token];
+                            GetTokenString();
+                            if (ttype == SEMICOLON)
+                            {
+                                return st;
+                            }
+                            else
+                            {
+                                debug("Expecting SEMICOLON while parsing assignment statement.");
+                                exit(1);
+                            }
+                            
+                        }
+                        else if (ttype == NUM)
+                        {
+                            assignment_node->operand2 = new ValueNode;
+                            assignment_node->operand2->value = atoi(token);
+                            GetTokenString();
+                            if (ttype == SEMICOLON)
+                            {
+                                return st;
+                            }
+                            else
+                            {
+                                debug("Expecting SEMICOLON while parsing assignment statement.");
+                                exit(1);
+                            }
+                        }
+                        else
+                        {
+                            debug("Expecting ID or NUM while parsing operand 2 of assignment statement.");
+                            exit(1);
+                        }
+                    }
+                    else if (ttype == SEMICOLON)
+                    {
+                        assignment_node->op = 0;
+                        return st;
+                    }
+                    else
+                    {
+                        debug("Expecting operand type after parsing operand1 of assignment statement.");
+                        exit(1);
+                    }
                 }
                 else
                 {
-                    debug("Expecting operand type after parsing operand1 of assignment statement.");
+                    debug("Expecting ID or NUM while parsing assignment statement.");
+                    exit(1);
+                }
+            }
+            else
+            {
+                debug("Expecting EQUAL while parsing Assignment statement.");
+                exit(1);
+            }
+            break;
+        }
+        case IF:
+        {
+            st->type = IF_STMT;
+            struct IfStatement* if_node = new IfStatement;
+            st->if_stmt = if_node;
+            
+            GetTokenString();
+            if (ttype == ID)
+            {
+                if_node->condition_operand1 = variableMap[Token];
+                GetTokenString();
+                if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
+                {
+                    if_node->condition_op = ttype;
+                    GetTokenString();
+                    if (ttype == ID)
+                    {
+                        if_node->condition_operand2 = variableMap[Token];
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
+                        {
+                            it = it->next;
+                        }
+                        it->next = no_node;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
+                    }
+                    else if (ttype == NUM)
+                    {
+                        if_node->condition_operand2 = new ValueNode;
+                        if_node->condition_operand2->value = atoi(token);
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
+                        {
+                            it = it->next;
+                        }
+                        it->next = no_node;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
+                    }
+                }
+                else
+                {
+                    debug("Condition OP expected while parsing if statment.");
                     exit(1);
                 }
             }
             else if (ttype == NUM)
             {
-                assignment_node->operand1 = new ValueNode;
-                assignment_node->operand1->value = atoi(token);
-                GetToken();
-                if (ttype == PLUS || ttype == MINUS || ttype == MULT || ttype == DIV)
+                if_node->condition_operand1 = new ValueNode;
+                if_node->condition_operand1->value = atoi(token);
+                GetTokenString();
+                if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
                 {
-                    assignment_node->op = ttype;
-                    GetToken();
+                    if_node->condition_op = ttype;
+                    GetTokenString();
                     if (ttype == ID)
                     {
-                        assignment_node->operand2 = variableMap[Token];
-                        GetToken();
-                        if (ttype == SEMICOLON)
+                        if_node->condition_operand2 = variableMap[Token];
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
                         {
-                            return st;
+                            it = it->next;
                         }
-                        else
-                        {
-                            debug("Expecting SEMICOLON while parsing assignment statement.");
-                            exit(1);
-                        }
-                        
+                        it->next = no_node;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
                     }
                     else if (ttype == NUM)
                     {
-                        assignment_node->operand2 = new ValueNode;
-                        assignment_node->operand2->value = atoi(token);
-                        GetToken();
-                        if (ttype == SEMICOLON)
+                        if_node->condition_operand2 = new ValueNode;
+                        if_node->condition_operand2->value = atoi(token);
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
                         {
-                            return st;
+                            it = it->next;
                         }
-                        else
-                        {
-                            debug("Expecting SEMICOLON while parsing assignment statement.");
-                            exit(1);
-                        }
+                        it->next = no_node;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
                     }
-                    else
-                    {
-                        debug("Expecting ID or NUM while parsing operand 2 of assignment statement.");
-                        exit(1);
-                    }
-                }
-                else if (ttype == SEMICOLON)
-                {
-                    assignment_node->op = 0;
-                    return st;
                 }
                 else
                 {
-                    debug("Expecting operand type after parsing operand1 of assignment statement.");
+                    debug("Condition OP expected while parsing if statment.");
                     exit(1);
                 }
             }
-            else
-            {
-                debug("Expecting ID or NUM while parsing assignment statement.");
-                exit(1);
-            }
+            break;
         }
-        else
+        case PRINT:
         {
-            debug("Expecting EQUAL while parsing Assignment statement.");
-            exit(1);
-        }
-    }
-    else if (ttype == IF)
-    {
-        st->type = IF_STMT;
-        struct IfStatement* if_node = new IfStatement;
-        st->if_stmt = if_node;
-        
-        GetToken();
-        if (ttype == ID)
-        {
-            if_node->condition_operand1 = variableMap[Token];
-            GetToken();
-            if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
+            st->type = PRINT_STMT;
+            struct PrintStatement* print_node = new PrintStatement;
+            st->print_stmt = print_node;
+            GetTokenString();
+            if (ttype == ID)
             {
-                if_node->condition_op = ttype;
-                GetToken();
-                if (ttype == ID)
+                print_node->id = variableMap[Token];
+                GetTokenString();
+                if (ttype == SEMICOLON)
                 {
-                    if_node->condition_operand2 = variableMap[Token];
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
-                    {
-                        it = it->next;
-                    }
-                    it->next = no_node;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
-                    return st;
-                }
-                else if (ttype == NUM)
-                {
-                    if_node->condition_operand2 = new ValueNode;
-                    if_node->condition_operand2->value = atoi(token);
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
-                    {
-                        it = it->next;
-                    }
-                    it->next = no_node;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
                     return st;
                 }
             }
-            else
-            {
-                debug("Condition OP expected while parsing if statment.");
-                exit(1);
-            }
+            break;
         }
-        else if (ttype == NUM)
+        case WHILE:
         {
-            if_node->condition_operand1 = new ValueNode;
-            if_node->condition_operand1->value = atoi(token);
-            GetToken();
-            if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
+            st->type = IF_STMT;
+            struct IfStatement* if_node = new IfStatement;
+            
+            st->if_stmt = if_node;
+            
+            GetTokenString();
+            if (ttype == ID)
             {
-                if_node->condition_op = ttype;
-                GetToken();
-                if (ttype == ID)
+                if_node->condition_operand1 = variableMap[Token];
+                GetTokenString();
+                if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
                 {
-                    if_node->condition_operand2 = variableMap[Token];
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
+                    if_node->condition_op = ttype;
+                    GetTokenString();
+                    if (ttype == ID)
                     {
-                        it = it->next;
+                        if_node->condition_operand2 = variableMap[Token];
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* gt = new StatementNode;
+                        gt->next = NULL;
+                        gt->type = GOTO_STMT;
+                        struct GotoStatement* goto_node = new GotoStatement;
+                        gt->goto_stmt = goto_node;
+                        goto_node->target = st;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
+                        {
+                            it = it->next;
+                        }
+                        it->next = gt;
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
                     }
-                    it->next = no_node;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
-                    return st;
+                    else if (ttype == NUM)
+                    {
+                        if_node->condition_operand2 = new ValueNode;
+                        if_node->condition_operand2->value = atoi(token);
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* gt = new StatementNode;
+                        gt->type = GOTO_STMT;
+                        struct GotoStatement* goto_node = new GotoStatement;
+                        gt->goto_stmt = goto_node;
+                        goto_node->target = st;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
+                        {
+                            it = it->next;
+                        }
+                        it->next = gt;
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
+                    }
                 }
-                else if (ttype == NUM)
+                else
                 {
-                    if_node->condition_operand2 = new ValueNode;
-                    if_node->condition_operand2->value = atoi(token);
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
-                    {
-                        it = it->next;
-                    }
-                    it->next = no_node;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
-                    return st;
+                    debug("Condition OP expected while parsing if statment.");
+                    exit(1);
                 }
             }
-            else
+            else if (ttype == NUM)
             {
-                debug("Condition OP expected while parsing if statment.");
-                exit(1);
+                if_node->condition_operand1 = new ValueNode;
+                if_node->condition_operand1->value = atoi(token);
+                GetTokenString();
+                if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
+                {
+                    if_node->condition_op = ttype;
+                    GetTokenString();
+                    if (ttype == ID)
+                    {
+                        if_node->condition_operand2 = variableMap[Token];
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* gt = new StatementNode;
+                        gt->next = NULL;
+                        gt->type = GOTO_STMT;
+                        struct GotoStatement* goto_node = new GotoStatement;
+                        gt->goto_stmt = goto_node;
+                        goto_node->target = st;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
+                        {
+                            it = it->next;
+                        }
+                        it->next = gt;
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
+                    }
+                    else if (ttype == NUM)
+                    {
+                        if_node->condition_operand2 = new ValueNode;
+                        if_node->condition_operand2->value = atoi(token);
+                        if_node->true_branch = parse_body();
+                        struct StatementNode* gt = new StatementNode;
+                        gt->next = NULL;
+                        gt->type = GOTO_STMT;
+                        struct GotoStatement* goto_node = new GotoStatement;
+                        gt->goto_stmt = goto_node;
+                        goto_node->target = st;
+                        struct StatementNode* it = if_node->true_branch;
+                        while (it->next != NULL)
+                        {
+                            it = it->next;
+                        }
+                        it->next = gt;
+                        struct StatementNode* no_node = new StatementNode;
+                        no_node->type = NOOP_STMT;
+                        no_node->next = NULL;
+                        if_node->false_branch = no_node;
+                        st->next = no_node;
+                        return st;
+                    }
+                }
+                else
+                {
+                    debug("Condition OP expected while parsing if statment.");
+                    exit(1);
+                }
             }
+            break;
         }
-    }
-    else if (ttype == PRINT)
-    {
-        st->type = PRINT_STMT;
-        struct PrintStatement* print_node = new PrintStatement;
-        st->print_stmt = print_node;
-        GetToken();
-        if (ttype == ID)
+        case SWITCH:
         {
-            print_node->id = variableMap[Token];
-            GetToken();
-            if (ttype == SEMICOLON)
+            GetTokenString();
+            if (ttype == ID)
             {
+                varID = Token;
+                st = parse_switch_body();
                 return st;
             }
-        }
-    }
-    else if (ttype == WHILE)
-    {
-        st->type = IF_STMT;
-        struct IfStatement* if_node = new IfStatement;
-        st->if_stmt = if_node;
-        
-        GetToken();
-        if (ttype == ID)
-        {
-            if_node->condition_operand1 = variableMap[Token];
-            GetToken();
-            if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
-            {
-                if_node->condition_op = ttype;
-                GetToken();
-                if (ttype == ID)
-                {
-                    if_node->condition_operand2 = variableMap[Token];
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* gt = new StatementNode;
-                    gt->type = GOTO_STMT;
-                    struct GotoStatement* goto_node = new GotoStatement;
-                    gt->goto_stmt = goto_node;
-                    goto_node->target = st;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
-                    {
-                        it = it->next;
-                    }
-                    it->next = gt;
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
-                    return st;
-                }
-                else if (ttype == NUM)
-                {
-                    if_node->condition_operand2 = new ValueNode;
-                    if_node->condition_operand2->value = atoi(token);
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* gt = new StatementNode;
-                    gt->type = GOTO_STMT;
-                    struct GotoStatement* goto_node = new GotoStatement;
-                    gt->goto_stmt = goto_node;
-                    goto_node->target = st;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
-                    {
-                        it = it->next;
-                    }
-                    it->next = gt;
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
-                    return st;
-                }
-            }
             else
             {
-                debug("Condition OP expected while parsing if statment.");
+                debug("Expecting initial ID while parsing Switch statement.");
                 exit(1);
             }
+            break;
         }
-        else if (ttype == NUM)
+        default:
         {
-            if_node->condition_operand1 = new ValueNode;
-            if_node->condition_operand1->value = atoi(token);
-            GetToken();
-            if (ttype == GREATER || ttype == LESS || ttype == NOTEQUAL)
-            {
-                if_node->condition_op = ttype;
-                GetToken();
-                if (ttype == ID)
-                {
-                    if_node->condition_operand2 = variableMap[Token];
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* gt = new StatementNode;
-                    gt->type = GOTO_STMT;
-                    struct GotoStatement* goto_node = new GotoStatement;
-                    gt->goto_stmt = goto_node;
-                    goto_node->target = st;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
-                    {
-                        it = it->next;
-                    }
-                    it->next = gt;
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
-                    return st;
-                }
-                else if (ttype == NUM)
-                {
-                    if_node->condition_operand2 = new ValueNode;
-                    if_node->condition_operand2->value = atoi(token);
-                    if_node->true_branch = parse_body();
-                    struct StatementNode* gt = new StatementNode;
-                    gt->type = GOTO_STMT;
-                    struct GotoStatement* goto_node = new GotoStatement;
-                    gt->goto_stmt = goto_node;
-                    goto_node->target = st;
-                    struct StatementNode* it = if_node->true_branch;
-                    while (it->next != NULL)
-                    {
-                        it = it->next;
-                    }
-                    it->next = gt;
-                    struct StatementNode* no_node = new StatementNode;
-                    no_node->type = NOOP_STMT;
-                    no_node->next = NULL;
-                    if_node->false_branch = no_node;
-                    st->next = no_node;
-                    return st;
-                }
-            }
-            else
-            {
-                debug("Condition OP expected while parsing if statment.");
-                exit(1);
-            }
-        }
-    }
-    else if (ttype == SWITCH)
-    {
-        GetToken();
-        if (ttype == ID)
-        {
-            varID = Token;
-            st = parse_switch_body();
-            return st;
-        }
-        else
-        {
-            debug("Expecting initial ID while parsing Switch statement.");
+            debug("No.");
             exit(1);
+            break;
         }
     }
     return NULL;
@@ -483,20 +487,21 @@ struct StatementNode* parse_stmt()
 struct StatementNode* parse_case()
 {
     struct StatementNode* st = new StatementNode;
+    st->next = NULL;
     
     if (ttype == CASE)
     {
         st->type = IF_STMT;
         struct IfStatement* if_node = new IfStatement;
         st->if_stmt = if_node;
-        GetToken();
+        GetTokenString();
         if (ttype == NUM)
         {
             if_node->condition_operand1 = variableMap[varID];
             if_node->condition_op = NOTEQUAL;
             if_node->condition_operand2 = new ValueNode;
             if_node->condition_operand2->value = atoi(token);
-            GetToken();
+            GetTokenString();
             if (ttype == COLON)
             {
                 if_node->false_branch = parse_body();
@@ -525,7 +530,7 @@ struct StatementNode* parse_case()
         st->type = GOTO_STMT;
         struct GotoStatement* gt = new GotoStatement;
         st->goto_stmt = gt;
-        GetToken();
+        GetTokenString();
         if (ttype == COLON)
         {
             gt->target = parse_body();
@@ -561,10 +566,38 @@ struct StatementNode* parse_case_list()
     struct StatementNode* stl;
     
     st = parse_case();
-    GetToken();
+    GetTokenString();
     if (ttype == CASE || ttype == DEFAULT)
     {
         stl = parse_case_list();
+        
+        if (st->type == IF_STMT)
+        {
+            st->next->next = stl;
+        }
+        else if (st->type == NOOP_STMT)
+        {
+            st->next = stl;
+        }
+        return st;
+    }
+    else
+    {
+        ungetToken();
+        return st;
+    }
+};
+
+struct StatementNode* parse_stmt_list()
+{
+    struct StatementNode* st;
+    struct StatementNode* stl;
+    
+    st = parse_stmt();
+    GetTokenString();
+    if (ttype == ID || ttype == PRINT || ttype == IF || ttype == WHILE || ttype == SWITCH)
+    {
+        stl = parse_stmt_list();
         
         if (st->type == IF_STMT)
         {
@@ -587,12 +620,12 @@ struct StatementNode* parse_switch_body()
 {
     struct StatementNode* stl;
     
-    GetToken();
+    GetTokenString();
     if (ttype == LBRACE)
     {
-        GetToken();
+        GetTokenString();
         stl = parse_case_list();
-        GetToken();
+        GetTokenString();
         if (ttype == RBRACE)
         {
             return stl;
@@ -610,44 +643,15 @@ struct StatementNode* parse_switch_body()
     }
     return NULL;
 };
-
-struct StatementNode* parse_stmt_list()
-{
-    struct StatementNode* st;
-    struct StatementNode* stl;
-    
-    st = parse_stmt();
-    GetToken();
-    if (ttype == ID || ttype == PRINT || ttype == IF || ttype == WHILE || ttype == SWITCH)
-    {
-        stl = parse_stmt_list();
-        
-        if (st->type == IF_STMT)
-        {
-            st->next->next = stl;
-        }
-        else
-        {
-            st->next = stl;
-        }
-        return st;
-    }
-    else
-    {
-        ungetToken();
-        return st;
-    }
-};
-
 struct StatementNode* parse_body()
 {
     struct StatementNode* stl;
-    GetToken();
+    GetTokenString();
     if (ttype == LBRACE)
     {
-        GetToken();
+        GetTokenString();
         stl = parse_stmt_list();
-        GetToken();
+        GetTokenString();
         if (ttype == RBRACE)
         {
             return stl;
@@ -666,9 +670,9 @@ struct StatementNode* parse_body()
     return NULL;
 };
 
-int GetToken()
+int GetTokenString()
 {
     int type = getToken();
-    Token = token;
+    Token = string(token);
     return type;
 };
